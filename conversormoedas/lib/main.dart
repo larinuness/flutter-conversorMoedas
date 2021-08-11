@@ -1,5 +1,6 @@
 import 'package:conversormoedas/paletacores.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -13,18 +14,17 @@ void main() async {
     home: Home(),
     debugShowCheckedModeBanner: false,
     theme: ThemeData(
-      //Cores da borta
+        //Cores da borta
         inputDecorationTheme: InputDecorationTheme(
-          //Sem clicar
-          enabledBorder:
-          OutlineInputBorder(borderSide: BorderSide(color: PaletaCores.amareloClaro)),
-          //Quando clica, está com foco
-          focusedBorder:
-          OutlineInputBorder(borderSide: BorderSide(color: PaletaCores.amareloMaisEscuro)),
-          hintStyle: TextStyle(color: PaletaCores.amareloMaisEscuro),
-        )),
+      //Sem clicar
+      enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: Colors.black26)),
+      //Quando clica, está com foco
+      focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: PaletaCores.amareloMaisEscuro)),
+      hintStyle: TextStyle(color: PaletaCores.amareloMaisEscuro),
+    )),
   ));
-
 }
 
 //Pegar todos
@@ -41,8 +41,10 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-
- double? dolar;
+  final realController = TextEditingController();
+  final dolarController = TextEditingController();
+  final euroController = TextEditingController();
+  double? dolar;
   double? euro;
 
   @override
@@ -52,7 +54,10 @@ class _HomeState extends State<Home> {
       appBar: AppBar(
         backgroundColor: PaletaCores.amareloMaisEscuro,
         centerTitle: true,
-        title: Text(' Conver\$or ', style: TextStyle(color: Colors.white),),
+        title: Text(
+          ' Conver\$or ',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: FutureBuilder<Map>(
         future: getData(),
@@ -70,7 +75,7 @@ class _HomeState extends State<Home> {
                 ),
               );
             default:
-              if(snapshot.hasError) {
+              if (snapshot.hasError) {
                 return Center(
                   child: Text(
                     'Erro ao carregar dados :(',
@@ -88,33 +93,16 @@ class _HomeState extends State<Home> {
                     //Está como strech porque é pra ocupar toda a larguda possivel
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Icon(Icons.monetization_on, size: 150,color: PaletaCores.amareloEscuro,),
-                      TextField(
-                        decoration: InputDecoration(
-                          labelText: 'Reais',
-                          labelStyle: TextStyle(color: Colors.black,fontSize: 20),
-                          border: OutlineInputBorder(),
-                          prefixText: "R\$"
-                        ),
-                      style: TextStyle(color: Colors.black),),
+                      Icon(
+                        Icons.monetization_on,
+                        size: 150,
+                        color: PaletaCores.amareloEscuro,
+                      ),
+                      buildTextField('Reais', 'R\$',realController, _realChanged),
                       Divider(),
-                      TextField(
-                        decoration: InputDecoration(
-                            labelText: 'Dolares',
-                            labelStyle: TextStyle(color: Colors.black,fontSize: 20),
-                            border: OutlineInputBorder(),
-                            prefixText: "US\$"
-                        ),
-                        style: TextStyle(color: Colors.black),),
+                      buildTextField('Dolares', 'US\$',dolarController, _dolarChanged),
                       Divider(),
-                      TextField(
-                        decoration: InputDecoration(
-                            labelText: 'Euros',
-                            labelStyle: TextStyle(color: Colors.black,fontSize: 20),
-                            border: OutlineInputBorder(),
-                            prefixText: "€"
-                        ),
-                        style: TextStyle(color: Colors.black),),
+                      buildTextField('Euros', '€',euroController, _euroChanged),
                     ],
                   ),
                 );
@@ -123,5 +111,56 @@ class _HomeState extends State<Home> {
         },
       ),
     );
+  }
+
+  Widget buildTextField(String label, String prefix, TextEditingController c, Function(String) f) {
+    return TextField(
+      controller: c,
+      keyboardType: TextInputType.number,
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: TextStyle(color: Colors.black, fontSize: 20),
+        border: OutlineInputBorder(),
+        prefixText: prefix,
+      ),
+      style: TextStyle(color: Colors.black),
+      onChanged: f,
+    );
+  }
+
+  void _realChanged(String text){
+    if(text.isEmpty) {
+      _clearAll();
+      return;
+    }
+    double real = double.parse(text);
+    dolarController.text = (real/dolar!).toStringAsFixed(2);
+    euroController.text = (real/euro!).toStringAsFixed(2);
+  }
+
+  void _dolarChanged(String text){
+    if(text.isEmpty) {
+      _clearAll();
+      return;
+    }
+    double dolar = double.parse(text);
+    realController.text = (dolar * this.dolar!).toStringAsFixed(2);
+    euroController.text = (dolar * this.dolar! / euro!).toStringAsFixed(2);
+  }
+
+  void _euroChanged(String text){
+    if(text.isEmpty) {
+      _clearAll();
+      return;
+    }
+    double euro = double.parse(text);
+    realController.text = (euro * this.euro!).toStringAsFixed(2);
+    dolarController.text = (euro * this.euro! / dolar!).toStringAsFixed(2);
+  }
+
+  void _clearAll(){
+    realController.text = "";
+    dolarController.text = "";
+    euroController.text = "";
   }
 }
